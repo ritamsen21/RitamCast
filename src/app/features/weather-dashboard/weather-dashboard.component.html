@@ -1,0 +1,230 @@
+<div class="dashboard">
+  <section class="hero">
+    <div class="branding">
+      <p>Hyperlocal forecasts with real-time updates and elegant insights.</p>
+    </div>
+
+    <form class="search" (ngSubmit)="onSubmit()">
+      <div class="input-wrapper">
+        <input
+          type="search"
+          class="search-input"
+          placeholder="Search any city..."
+          autocomplete="off"
+          [formControl]="searchControl"
+          [disabled]="loading()"
+        />
+        <button type="submit" class="search-button" [disabled]="loading()">Search</button>
+      </div>
+
+      <ul class="suggestions" *ngIf="suggestions().length > 0">
+        <li
+          class="suggestions__item"
+          *ngFor="let suggestion of suggestions()"
+          (click)="onSuggestionSelect(suggestion)"
+        >
+          <span>{{ suggestion.name }}</span>
+          <small *ngIf="suggestion.country">{{ suggestion.country }}</small>
+        </li>
+      </ul>
+    </form>
+
+    <div class="quick-links">
+      <span class="quick-links__label">Quick picks</span>
+      <div class="quick-links__items">
+        <button
+          type="button"
+          class="chip"
+          *ngFor="let link of quickLinks"
+          (click)="onQuickLinkSelect(link)"
+          [disabled]="loading()"
+        >
+          {{ link.name }}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section class="status" *ngIf="loading()">
+    <div class="status__card">
+      <div class="spinner" aria-hidden="true"></div>
+      <p>Fetching live weather data...</p>
+    </div>
+  </section>
+
+  <section class="status status--error" *ngIf="!loading() && error()">
+    <div class="status__card">
+      <p>{{ error() }}</p>
+    </div>
+  </section>
+
+  <section class="content" *ngIf="!loading() && weather() as weatherData">
+    <div class="current-card">
+      <div class="current-card__header">
+        <div class="current-card__meta">
+          <h2>{{ formatLocation(weatherData.location) }}</h2>
+          <p>
+            {{ weatherData.current.time | date: 'EEEE, MMM d • h:mm a': weatherData.current.timezone }}
+          </p>
+        </div>
+        <div class="badge">Live</div>
+      </div>
+
+      <div class="current-card__body">
+        <div class="temperature">
+          <div class="temperature__value">
+            {{ weatherData.current.temperature | number: '1.0-0' }}<span class="degree">°C</span>
+          </div>
+          <div class="temperature__feels">
+            Feels like {{ weatherData.current.feelsLike | number: '1.0-0' }}°C
+          </div>
+          <div class="temperature__condition">{{ weatherData.current.condition }}</div>
+          <div class="temperature__probability">
+            Chance of rain: {{ weatherData.current.precipitationProbability | number: '1.0-0' }}%
+          </div>
+        </div>
+
+        <div class="current-card__icon" aria-hidden="true">
+          <ng-container [ngSwitch]="weatherData.current.iconKey">
+            <svg *ngSwitchCase="'clear-day'" viewBox="0 0 64 64" class="icon">
+              <circle cx="32" cy="32" r="16" class="icon--stroke"></circle>
+              <g class="rays">
+                <line x1="32" y1="4" x2="32" y2="16"></line>
+                <line x1="32" y1="48" x2="32" y2="60"></line>
+                <line x1="4" y1="32" x2="16" y2="32"></line>
+                <line x1="48" y1="32" x2="60" y2="32"></line>
+                <line x1="11" y1="11" x2="19" y2="19"></line>
+                <line x1="45" y1="45" x2="53" y2="53"></line>
+                <line x1="11" y1="53" x2="19" y2="45"></line>
+                <line x1="45" y1="19" x2="53" y2="11"></line>
+              </g>
+            </svg>
+            <svg *ngSwitchCase="'partly-cloudy-day'" viewBox="0 0 64 64" class="icon">
+              <circle cx="26" cy="26" r="12" class="icon--stroke"></circle>
+              <path d="M20 44h26a10 10 0 0 0 0-20 14 14 0 0 0-27.3-2.3" class="icon--fill"></path>
+            </svg>
+            <svg *ngSwitchCase="'cloudy'" viewBox="0 0 64 64" class="icon">
+              <path d="M18 46h28a12 12 0 0 0 0-24 16 16 0 0 0-31.1-3.1A10 10 0 0 0 18 46z" class="icon--fill"></path>
+            </svg>
+            <svg *ngSwitchCase="'fog'" viewBox="0 0 64 64" class="icon">
+              <path d="M12 28h40M8 38h48M16 48h32" class="icon--stroke"></path>
+              <path d="M18 24a14 14 0 0 1 27.2-4.3A10 10 0 0 1 46 24" class="icon--stroke"></path>
+            </svg>
+            <svg *ngSwitchCase="'drizzle'" viewBox="0 0 64 64" class="icon">
+              <path d="M20 24a12 12 0 0 1 23.6-3.4A9 9 0 0 1 44 24" class="icon--stroke"></path>
+              <path d="M18 40h28" class="icon--stroke"></path>
+              <path d="M24 44l-4 10M32 44l-4 10M40 44l-4 10" class="icon--stroke"></path>
+            </svg>
+            <svg *ngSwitchCase="'rain'" viewBox="0 0 64 64" class="icon">
+              <path d="M18 42h28a12 12 0 0 0 0-24 16 16 0 0 0-31.1-3.1A10 10 0 0 0 18 42z" class="icon--fill"></path>
+              <path d="M24 46l-6 12M34 46l-6 12M44 46l-6 12" class="icon--stroke"></path>
+            </svg>
+            <svg *ngSwitchCase="'snow'" viewBox="0 0 64 64" class="icon">
+              <path d="M18 40h28a12 12 0 0 0 0-24 16 16 0 0 0-31.1-3.1A10 10 0 0 0 18 40z" class="icon--fill"></path>
+              <g class="icon--stroke">
+                <line x1="24" y1="44" x2="24" y2="56"></line>
+                <line x1="20" y1="48" x2="28" y2="52"></line>
+                <line x1="28" y1="48" x2="20" y2="52"></line>
+                <line x1="34" y1="44" x2="34" y2="56"></line>
+                <line x1="30" y1="48" x2="38" y2="52"></line>
+                <line x1="38" y1="48" x2="30" y2="52"></line>
+              </g>
+            </svg>
+            <svg *ngSwitchCase="'thunder'" viewBox="0 0 64 64" class="icon">
+              <path d="M18 40h28a12 12 0 0 0 0-24 16 16 0 0 0-31.1-3.1A10 10 0 0 0 18 40z" class="icon--fill"></path>
+              <path d="M30 44h8l-6 14 2-10h-8l6-14z" class="icon--stroke"></path>
+            </svg>
+            <svg *ngSwitchCase="'ice'" viewBox="0 0 64 64" class="icon">
+              <path d="M18 40h28a12 12 0 0 0 0-24 16 16 0 0 0-31.1-3.1A10 10 0 0 0 18 40z" class="icon--fill"></path>
+              <g class="icon--stroke">
+                <line x1="32" y1="44" x2="32" y2="58"></line>
+                <line x1="26" y1="48" x2="38" y2="54"></line>
+                <line x1="26" y1="54" x2="38" y2="48"></line>
+              </g>
+            </svg>
+            <svg *ngSwitchDefault viewBox="0 0 64 64" class="icon">
+              <circle cx="32" cy="32" r="20" class="icon--stroke"></circle>
+            </svg>
+          </ng-container>
+        </div>
+      </div>
+
+      <footer class="current-card__footer">
+        <span>Wind: {{ weatherData.current.windSpeed | number: '1.0-1' }} km/h {{ weatherData.current.windDirectionCardinal }}</span>
+        <span>UV index: {{ weatherData.current.uvIndex | number: '1.0-1' }}</span>
+        <span>Updated {{ weatherData.fetchedAt | date: 'shortTime': weatherData.current.timezone }}</span>
+      </footer>
+    </div>
+
+    <div class="metrics-grid">
+      <article class="metric">
+        <h3>Feels like</h3>
+        <p>{{ weatherData.current.feelsLike | number: '1.0-0' }}°C</p>
+      </article>
+      <article class="metric">
+        <h3>Humidity</h3>
+        <p>{{ weatherData.current.humidity | number: '1.0-0' }}%</p>
+      </article>
+      <article class="metric">
+        <h3>Rain chance</h3>
+        <p>{{ weatherData.current.precipitationProbability | number: '1.0-0' }}%</p>
+      </article>
+      <article class="metric">
+        <h3>Sunrise</h3>
+        <p>{{ weatherData.current.sunrise | date: 'h:mm a': weatherData.current.timezone }}</p>
+      </article>
+      <article class="metric">
+        <h3>Sunset</h3>
+        <p>{{ weatherData.current.sunset | date: 'h:mm a': weatherData.current.timezone }}</p>
+      </article>
+      <article class="metric">
+        <h3>Wind direction</h3>
+        <p>{{ weatherData.current.windDirectionCardinal }}</p>
+      </article>
+    </div>
+
+    <section class="forecast">
+      <header class="section-header">
+        <h3>7-day outlook</h3>
+      </header>
+      <div class="forecast__list">
+        <article class="forecast-card" *ngFor="let day of weatherData.daily.slice(0, 7); trackBy: trackByDate">
+          <span class="forecast-card__day">{{ day.date | date: 'EEE' }}</span>
+          <span class="forecast-card__date">{{ day.date | date: 'MMM d' }}</span>
+          <div class="forecast-card__icon" aria-hidden="true">
+            <ng-container [ngSwitch]="day.iconKey">
+              <span *ngSwitchCase="'clear-day'" class="symbol symbol--sun"></span>
+              <span *ngSwitchCase="'partly-cloudy-day'" class="symbol symbol--partly"></span>
+              <span *ngSwitchCase="'cloudy'" class="symbol symbol--cloud"></span>
+              <span *ngSwitchCase="'rain'" class="symbol symbol--rain"></span>
+              <span *ngSwitchCase="'drizzle'" class="symbol symbol--rain"></span>
+              <span *ngSwitchCase="'snow'" class="symbol symbol--snow"></span>
+              <span *ngSwitchCase="'thunder'" class="symbol symbol--storm"></span>
+              <span *ngSwitchCase="'fog'" class="symbol symbol--fog"></span>
+              <span *ngSwitchCase="'ice'" class="symbol symbol--ice"></span>
+              <span *ngSwitchDefault class="symbol symbol--sun"></span>
+            </ng-container>
+          </div>
+          <div class="forecast-card__temps">
+            <span class="max">{{ day.maxTemp | number: '1.0-0' }}°</span>
+            <span class="min">{{ day.minTemp | number: '1.0-0' }}°</span>
+          </div>
+          <span class="forecast-card__rain">{{ day.precipitationProbability | number: '1.0-0' }}%</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="hourly">
+      <header class="section-header">
+        <h3>Next 12 hours</h3>
+      </header>
+      <div class="hourly__list">
+        <article class="hour-card" *ngFor="let hour of weatherData.hourly; trackBy: trackByTime">
+          <span class="hour-card__time">{{ hour.time | date: 'h a': weatherData.current.timezone }}</span>
+          <span class="hour-card__temp">{{ hour.temperature | number: '1.0-0' }}°</span>
+          <span class="hour-card__rain">{{ hour.precipitationProbability | number: '1.0-0' }}%</span>
+        </article>
+      </div>
+    </section>
+  </section>
+</div>
